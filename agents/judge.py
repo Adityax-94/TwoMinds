@@ -1,18 +1,18 @@
 import os, sys, json
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_groq import ChatGroq
 from langchain_core.messages import SystemMessage, HumanMessage
 from state.debate_state import DebateState, RoundScore
 from utils.prompts import JUDGE_SYSTEM, FINAL_VERDICT_SYSTEM, build_judge_prompt, build_verdict_prompt
 
 
 def run_judge(state: DebateState) -> DebateState:
-    """Judge agent — scores the current round and adds to state."""
-    llm = ChatGoogleGenerativeAI(
-        model="gemini-2.0-flash",
-        google_api_key=os.getenv("GEMINI_API_KEY"),
-        temperature=0.2,        # Low temp for consistent, analytical scoring
+    """Judge agent — powered by Llama-3 via Groq. Scores each round."""
+    llm = ChatGroq(
+        model="llama-3.3-70b-versatile",
+        api_key=os.getenv("GROQ_API_KEY"),
+        temperature=0.2,
     )
 
     prompt = build_judge_prompt(
@@ -29,14 +29,12 @@ def run_judge(state: DebateState) -> DebateState:
     # Parse JSON response
     try:
         raw = response.content.strip()
-        # Strip markdown fences if model wraps in them anyway
         if raw.startswith("```"):
             raw = raw.split("```")[1]
             if raw.startswith("json"):
                 raw = raw[4:]
         data = json.loads(raw)
     except json.JSONDecodeError:
-        # Fallback scores if parsing fails
         data = {
             "proponent_score": 5.0,
             "opponent_score": 5.0,
@@ -55,9 +53,9 @@ def run_judge(state: DebateState) -> DebateState:
 
 def run_final_verdict(state: DebateState) -> DebateState:
     """Delivers the final verdict and declares a winner."""
-    llm = ChatGoogleGenerativeAI(
-        model="gemini-2.0-flash",
-        google_api_key=os.getenv("GEMINI_API_KEY"),
+    llm = ChatGroq(
+        model="llama-3.3-70b-versatile",
+        api_key=os.getenv("GROQ_API_KEY"),
         temperature=0.4,
     )
 
@@ -75,7 +73,6 @@ def run_final_verdict(state: DebateState) -> DebateState:
 
     state.final_verdict = response.content
 
-    # Determine winner from scores
     if totals["proponent"] > totals["opponent"]:
         state.winner = "proponent"
     elif totals["opponent"] > totals["proponent"]:

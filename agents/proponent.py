@@ -1,18 +1,18 @@
 import os, sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_groq import ChatGroq
 from langchain_core.messages import SystemMessage, HumanMessage
 from state.debate_state import DebateState, Argument
 from utils.prompts import PROPONENT_SYSTEM, build_proponent_prompt
 
 
 def run_proponent(state: DebateState) -> DebateState:
-    """Proponent agent — powered by Gemini 2.0 Flash. Argues FOR the topic."""
-    llm = ChatGoogleGenerativeAI(
-        model="gemini-2.0-flash",
-        google_api_key=os.getenv("GEMINI_API_KEY"),
-        temperature=0.8,
+    """Proponent agent — Llama-3.3 70B via Groq. Argues FOR the topic."""
+    llm = ChatGroq(
+        model="llama-3.3-70b-versatile",
+        api_key=os.getenv("GROQ_API_KEY"),
+        temperature=0.9,
     )
 
     prompt = build_proponent_prompt(
@@ -30,7 +30,7 @@ def run_proponent(state: DebateState) -> DebateState:
         agent="proponent",
         round_number=state.current_round,
         content=response.content,
-        model_used="gemini-2.0-flash",
+        model_used="llama-3.3-70b (Groq)",
     )
 
     state.arguments.append(argument)

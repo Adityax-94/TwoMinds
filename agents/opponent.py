@@ -1,21 +1,17 @@
 import os, sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-import os
-from langchain_openai import ChatOpenAI
+from langchain_groq import ChatGroq
 from langchain_core.messages import SystemMessage, HumanMessage
 from state.debate_state import DebateState, Argument
 from utils.prompts import OPPONENT_SYSTEM, build_opponent_prompt
 
 
 def run_opponent(state: DebateState) -> DebateState:
-    """Opponent agent — powered by Grok-2. Argues AGAINST the topic."""
-
-    # Grok is OpenAI-compatible, so we use ChatOpenAI with a custom base_url
-    llm = ChatOpenAI(
-        model="grok-2-latest",
-        api_key=os.getenv("GROK_API_KEY"),
-        base_url="https://api.x.ai/v1",
+    """Opponent agent — powered by Llama-3 via Groq. Argues AGAINST the topic."""
+    llm = ChatGroq(
+        model="llama-3.3-70b-versatile",
+        api_key=os.getenv("GROQ_API_KEY"),
         temperature=0.8,
     )
 
@@ -34,7 +30,7 @@ def run_opponent(state: DebateState) -> DebateState:
         agent="opponent",
         round_number=state.current_round,
         content=response.content,
-        model_used="grok-2-latest",
+        model_used="llama-3.3-70b-versatile",
     )
 
     state.arguments.append(argument)
