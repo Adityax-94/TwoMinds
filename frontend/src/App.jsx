@@ -14,7 +14,7 @@ export default function App() {
   const [presets, setPresets] = useState([])
 
   useEffect(() => {
-    fetch('/presets').then(r => r.json()).then(d => setPresets(d.topics)).catch(() => {})
+    ffetch(`${import.meta.env.VITE_API_URL || ''}/presets`).then(r => r.json()).then(d => setPresets(d.topics)).catch(() => {})
   }, [])
 
   const startDebate = async () => {
@@ -25,7 +25,7 @@ export default function App() {
     setVerdict(null)
 
     try {
-      const res = await fetch('/debate', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/debate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ topic, rounds }),
