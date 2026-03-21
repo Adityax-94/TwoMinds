@@ -14,7 +14,7 @@ export default function App() {
   const [presets, setPresets] = useState([])
 
   useEffect(() => {
-    ffetch(`${import.meta.env.VITE_API_URL || ''}/presets`).then(r => r.json()).then(d => setPresets(d.topics)).catch(() => {})
+    fetch(`${import.meta.env.VITE_API_URL || ''}/presets`).then(r => r.json()).then(d => setPresets(d.topics)).catch(() => {})
   }, [])
 
   const startDebate = async () => {
