@@ -1,7 +1,7 @@
 import os, sys, json
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from langchain_groq import ChatGroq
+from langchain_groq import ChatGroq # type: ignore
 from langchain_core.messages import SystemMessage, HumanMessage
 from state.debate_state import DebateState, RoundScore
 from utils.prompts import JUDGE_SYSTEM, FINAL_VERDICT_SYSTEM, build_judge_prompt, build_verdict_prompt
