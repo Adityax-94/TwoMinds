@@ -9,8 +9,6 @@
 [![Backend](https://img.shields.io/badge/Backend-Railway-blueviolet?style=for-the-badge&logo=railway)](https://twominds-production.up.railway.app)
 [![GitHub](https://img.shields.io/github/stars/Adityax-94/TwoMinds?style=for-the-badge&logo=github)](https://github.com/Adityax-94/TwoMinds)
 
-![TwoMinds Banner](https://img.shields.io/badge/Llama%203.3%2070B-vs-Llama%203.3%2070B-red?style=for-the-badge)
-
 </div>
 
 ---
@@ -186,13 +184,6 @@ Open **http://localhost:5173** 🚀
 
 ---
 
-## Resume Bullets
-
-> Built a multi-agent debate system using LangGraph orchestrating three Llama 3.3 70B agents via Groq, featuring stateful N-round argumentation with shared Pydantic state and structured JSON scoring.
-
-> Designed and deployed a full-stack AI application with a FastAPI SSE streaming backend on Railway and a React + Tailwind frontend on Vercel, handling real-time agent output delivery to the client.
-
----
 
 <div align="center">
 
