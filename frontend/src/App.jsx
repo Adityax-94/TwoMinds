@@ -3,6 +3,7 @@ import Header from './components/Header'
 import TopicInput from './components/TopicInput'
 import DebateArena from './components/DebateArena'
 import Verdict from './components/Verdict'
+import API_URL from './config'
 
 export default function App() {
   const [topic, setTopic] = useState('')
@@ -15,7 +16,7 @@ export default function App() {
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL || ''}/presets`).then(r => r.json()).then(d => setPresets(d.topics)).catch(() => {})
+    fetch(`${API_URL}/presets`).then(r => r.json()).then(d => setPresets(d.topics)).catch(() => {})
   }, [])
 
   const startDebate = async () => {
@@ -27,7 +28,7 @@ export default function App() {
     setError(null)
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/debate`, {
+      const res = await fetch(`${API_URL}/debate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ topic, rounds }),
@@ -39,6 +40,11 @@ export default function App() {
 
       if (!res.body) {
         throw new Error('No response body from server')
+      }
+
+      const contentType = res.headers.get('content-type') || ''
+      if (!contentType.includes('text/event-stream')) {
+        throw new Error('Invalid response from server')
       }
 
       const reader = res.body.getReader()
