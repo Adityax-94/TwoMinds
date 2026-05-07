@@ -38,8 +38,8 @@ def root():
     return {"status": "TwoMinds API running"}
 
 @app.post("/debate")
-def debate(req: DebateRequest):
-    def generate():
+async def debate(req: DebateRequest):
+    async def generate():
         result = run_debate(req.topic, req.rounds)
         
         for arg in result.arguments:
@@ -62,6 +62,7 @@ def debate(req: DebateRequest):
                 "score": score_data,
             }
             yield f"data: {json.dumps(payload)}\n\n"
+            await asyncio.sleep(0)
 
         totals = result.get_total_scores()
         yield f"data: {json.dumps({'type': 'verdict', 'winner': result.winner, 'scores': totals, 'verdict': result.final_verdict})}\n\n"
