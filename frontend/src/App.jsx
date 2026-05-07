@@ -50,13 +50,14 @@ export default function App() {
       const reader = res.body.getReader()
       const decoder = new TextDecoder()
       let receivedVerdict = false
+      let receivedError = false
       let buffer = ''
       setStatus('debating')
 
       while (true) {
         const { done, value } = await reader.read()
         if (done) {
-          if (!receivedVerdict) {
+          if (!receivedVerdict && !receivedError) {
             setStatus('idle')
             setError('Debate ended early. Please try again.')
           }
@@ -76,7 +77,9 @@ export default function App() {
           const raw = dataLines.join('\n').trim()
 
           if (raw === '[DONE]') {
-            setStatus('done')
+            if (receivedVerdict) {
+              setStatus('done')
+            }
             continue
           }
 
@@ -86,6 +89,7 @@ export default function App() {
               setArguments(prev => [...prev, data])
               if (data.score) setScores(prev => [...prev, data.score])
             } else if (data.type === 'error') {
+              receivedError = true
               setError(data.message || 'Debate failed. Please try again.')
               setStatus('idle')
             } else if (data.type === 'verdict') {
