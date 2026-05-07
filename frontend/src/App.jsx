@@ -12,6 +12,7 @@ export default function App() {
   const [scores, setScores] = useState([])
   const [verdict, setVerdict] = useState(null)
   const [presets, setPresets] = useState([])
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     fetch(`${import.meta.env.VITE_API_URL || ''}/presets`).then(r => r.json()).then(d => setPresets(d.topics)).catch(() => {})
@@ -23,6 +24,7 @@ export default function App() {
     setArguments([])
     setScores([])
     setVerdict(null)
+    setError(null)
 
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/debate`, {
@@ -31,13 +33,28 @@ export default function App() {
         body: JSON.stringify({ topic, rounds }),
       })
 
+      if (!res.ok) {
+        throw new Error(`Debate request failed (${res.status})`)
+      }
+
+      if (!res.body) {
+        throw new Error('No response body from server')
+      }
+
       const reader = res.body.getReader()
       const decoder = new TextDecoder()
+      let receivedVerdict = false
       setStatus('debating')
 
       while (true) {
         const { done, value } = await reader.read()
-        if (done) break
+        if (done) {
+          if (!receivedVerdict) {
+            setStatus('idle')
+            setError('Debate ended early. Please try again.')
+          }
+          break
+        }
         const text = decoder.decode(value)
         const lines = text.split('\n').filter(l => l.startsWith('data: '))
         for (const line of lines) {
@@ -48,8 +65,12 @@ export default function App() {
             if (data.type === 'argument') {
               setArguments(prev => [...prev, data])
               if (data.score) setScores(prev => [...prev, data.score])
+            } else if (data.type === 'error') {
+              setError(data.message || 'Debate failed. Please try again.')
+              setStatus('idle')
             } else if (data.type === 'verdict') {
               setVerdict(data)
+              receivedVerdict = true
               setStatus('done')
             }
           } catch {}
@@ -58,6 +79,7 @@ export default function App() {
     } catch (e) {
       console.error(e)
       setStatus('idle')
+      setError('Failed to start debate. Please check the server and try again.')
     }
   }
 
@@ -65,6 +87,11 @@ export default function App() {
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1 max-w-5xl mx-auto w-full px-4 pb-20">
+        {error && (
+          <div className="mb-6 border border-red-500/20 bg-red-500/5 text-red-200/80 rounded-lg px-4 py-3 text-sm font-body">
+            {error}
+          </div>
+        )}
         <TopicInput
           topic={topic}
           setTopic={setTopic}
