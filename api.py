@@ -18,8 +18,15 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=False,
+
+    allow_origins=[
+        "https://two-minds-nine.vercel.app",
+        "https://two-minds-36bws37t5-adityax-94s-projects.vercel.app",
+        "http://localhost:5173"
+    ],
     allow_methods=["*"],
     allow_headers=["*"],
+
 )
 
 class DebateRequest(BaseModel):
