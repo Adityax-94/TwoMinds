@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import Header from './components/Header'
 import TopicInput from './components/TopicInput'
 import DebateArena from './components/DebateArena'
@@ -38,68 +38,18 @@ export default function App() {
         throw new Error(`Debate request failed (${res.status})`)
       }
 
-      if (!res.body) {
-        throw new Error('No response body from server')
+      const data = await res.json()
+
+      if (data?.error) {
+        setStatus('idle')
+        setError(data.error)
+        return
       }
 
-      const contentType = res.headers.get('content-type') || ''
-      if (!contentType.includes('text/event-stream')) {
-        throw new Error('Invalid response from server')
-      }
-
-      const reader = res.body.getReader()
-      const decoder = new TextDecoder()
-      let receivedVerdict = false
-      let receivedError = false
-      let buffer = ''
-      setStatus('debating')
-
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) {
-          if (!receivedVerdict && !receivedError) {
-            setStatus('idle')
-            setError('Debate ended early. Please try again.')
-          }
-          break
-        }
-        buffer += decoder.decode(value, { stream: true })
-        const events = buffer.split('\n\n')
-        buffer = events.pop() || ''
-
-        for (const evt of events) {
-          const dataLines = evt
-            .split('\n')
-            .filter(l => l.startsWith('data: '))
-            .map(l => l.replace('data: ', ''))
-
-          if (dataLines.length === 0) continue
-          const raw = dataLines.join('\n').trim()
-
-          if (raw === '[DONE]') {
-            if (receivedVerdict) {
-              setStatus('done')
-            }
-            continue
-          }
-
-          try {
-            const data = JSON.parse(raw)
-            if (data.type === 'argument') {
-              setArguments(prev => [...prev, data])
-              if (data.score) setScores(prev => [...prev, data.score])
-            } else if (data.type === 'error') {
-              receivedError = true
-              setError(data.message || 'Debate failed. Please try again.')
-              setStatus('idle')
-            } else if (data.type === 'verdict') {
-              setVerdict(data)
-              receivedVerdict = true
-              setStatus('done')
-            }
-          } catch {}
-        }
-      }
+      setArguments(data.arguments || [])
+      setScores(data.scores || [])
+      setVerdict(data.verdict || null)
+      setStatus('done')
     } catch (e) {
       console.error(e)
       setStatus('idle')

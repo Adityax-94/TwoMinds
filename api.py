@@ -1,13 +1,10 @@
 import sys, os
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from dotenv import load_dotenv
-import json
-import asyncio
 
 load_dotenv()
 
@@ -39,95 +36,47 @@ def root():
 
 @app.post("/debate")
 def debate(req: DebateRequest):
-    async def generate():
-        try:
-            state = DebateState(topic=req.topic, total_rounds=req.rounds)
+    try:
+        state = DebateState(topic=req.topic, total_rounds=req.rounds)
 
-            for round_num in range(1, req.rounds + 1):
-                state.current_round = round_num
+        for round_num in range(1, req.rounds + 1):
+            state.current_round = round_num
+            state = run_proponent(state)
+            state = run_opponent(state)
+            state = run_judge(state)
 
-                # Proponent argument
-                task = asyncio.create_task(asyncio.to_thread(run_proponent, state))
-                while True:
-                    done, _ = await asyncio.wait({task}, timeout=8)
-                    if done:
-                        state = task.result()
-                        break
-                    yield ":\n\n"
+        state = run_final_verdict(state)
 
-                pro_arg = state.arguments[-1]
-                yield f"data: {json.dumps({
-                    'type': 'argument',
-                    'agent': pro_arg.agent,
-                    'round': pro_arg.round_number,
-                    'content': pro_arg.content,
-                    'model': pro_arg.model_used,
-                    'score': None,
-                })}\n\n"
-
-                # Opponent argument
-                task = asyncio.create_task(asyncio.to_thread(run_opponent, state))
-                while True:
-                    done, _ = await asyncio.wait({task}, timeout=8)
-                    if done:
-                        state = task.result()
-                        break
-                    yield ":\n\n"
-
-                opp_arg = state.arguments[-1]
-
-                # Judge score
-                task = asyncio.create_task(asyncio.to_thread(run_judge, state))
-                while True:
-                    done, _ = await asyncio.wait({task}, timeout=8)
-                    if done:
-                        state = task.result()
-                        break
-                    yield ":\n\n"
-
-                s = state.scores[-1]
-                yield f"data: {json.dumps({
-                    'type': 'argument',
-                    'agent': opp_arg.agent,
-                    'round': opp_arg.round_number,
-                    'content': opp_arg.content,
-                    'model': opp_arg.model_used,
-                    'score': {
-                        'round': s.round_number,
-                        'proponent': s.proponent_score,
-                        'opponent': s.opponent_score,
-                        'reasoning': s.judge_reasoning,
-                    },
-                })}\n\n"
-
-            task = asyncio.create_task(asyncio.to_thread(run_final_verdict, state))
-            while True:
-                done, _ = await asyncio.wait({task}, timeout=8)
-                if done:
-                    state = task.result()
-                    break
-                yield ":\n\n"
-
-            totals = state.get_total_scores()
-            yield f"data: {json.dumps({'type': 'verdict', 'winner': state.winner, 'scores': totals, 'verdict': state.final_verdict})}\n\n"
-            yield "data: [DONE]\n\n"
-        except Exception as exc:
-            err_payload = {
-                "type": "error",
-                "message": "Debate failed. Please try again in a moment.",
-                "detail": str(exc),
+        arguments = [
+            {
+                "agent": arg.agent,
+                "round": arg.round_number,
+                "content": arg.content,
+                "model": arg.model_used,
             }
-            yield f"data: {json.dumps(err_payload)}\n\n"
-            yield "data: [DONE]\n\n"
+            for arg in state.arguments
+        ]
 
-    return StreamingResponse(
-        generate(),
-        media_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "X-Accel-Buffering": "no",
-        },
-    )
+        scores = [
+            {
+                "round": s.round_number,
+                "proponent": s.proponent_score,
+                "opponent": s.opponent_score,
+                "reasoning": s.judge_reasoning,
+            }
+            for s in state.scores
+        ]
+
+        totals = state.get_total_scores()
+        verdict = {
+            "winner": state.winner,
+            "scores": totals,
+            "verdict": state.final_verdict,
+        }
+
+        return {"arguments": arguments, "scores": scores, "verdict": verdict}
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 @app.get("/presets")
 def presets():
