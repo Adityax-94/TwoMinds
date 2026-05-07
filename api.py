@@ -7,6 +7,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from dotenv import load_dotenv
 import json
+import asyncio
 
 load_dotenv()
 
@@ -38,7 +39,7 @@ def root():
 
 @app.post("/debate")
 def debate(req: DebateRequest):
-    def generate():
+    async def generate():
         try:
             state = DebateState(topic=req.topic, total_rounds=req.rounds)
 
@@ -46,7 +47,14 @@ def debate(req: DebateRequest):
                 state.current_round = round_num
 
                 # Proponent argument
-                state = run_proponent(state)
+                task = asyncio.create_task(asyncio.to_thread(run_proponent, state))
+                while True:
+                    done, _ = await asyncio.wait({task}, timeout=8)
+                    if done:
+                        state = task.result()
+                        break
+                    yield ":\n\n"
+
                 pro_arg = state.arguments[-1]
                 yield f"data: {json.dumps({
                     'type': 'argument',
@@ -57,10 +65,26 @@ def debate(req: DebateRequest):
                     'score': None,
                 })}\n\n"
 
-                # Opponent argument + judge score
-                state = run_opponent(state)
+                # Opponent argument
+                task = asyncio.create_task(asyncio.to_thread(run_opponent, state))
+                while True:
+                    done, _ = await asyncio.wait({task}, timeout=8)
+                    if done:
+                        state = task.result()
+                        break
+                    yield ":\n\n"
+
                 opp_arg = state.arguments[-1]
-                state = run_judge(state)
+
+                # Judge score
+                task = asyncio.create_task(asyncio.to_thread(run_judge, state))
+                while True:
+                    done, _ = await asyncio.wait({task}, timeout=8)
+                    if done:
+                        state = task.result()
+                        break
+                    yield ":\n\n"
+
                 s = state.scores[-1]
                 yield f"data: {json.dumps({
                     'type': 'argument',
@@ -76,7 +100,14 @@ def debate(req: DebateRequest):
                     },
                 })}\n\n"
 
-            state = run_final_verdict(state)
+            task = asyncio.create_task(asyncio.to_thread(run_final_verdict, state))
+            while True:
+                done, _ = await asyncio.wait({task}, timeout=8)
+                if done:
+                    state = task.result()
+                    break
+                yield ":\n\n"
+
             totals = state.get_total_scores()
             yield f"data: {json.dumps({'type': 'verdict', 'winner': state.winner, 'scores': totals, 'verdict': state.final_verdict})}\n\n"
             yield "data: [DONE]\n\n"
