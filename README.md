@@ -6,7 +6,7 @@
 **Two AI agents. One topic. One winner.**
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Visit%20Site-black?style=for-the-badge&logo=vercel)](https://two-minds-nine.vercel.app)
-[![Backend](https://img.shields.io/badge/Backend-Railway-blueviolet?style=for-the-badge&logo=railway)](https://twominds-production.up.railway.app)
+[![Backend](https://img.shields.io/badge/Backend-Render-blue?style=for-the-badge&logo=render)](https://twominds.onrender.com)
 [![GitHub](https://img.shields.io/github/stars/Adityax-94/TwoMinds?style=for-the-badge&logo=github)](https://github.com/Adityax-94/TwoMinds)
 
 </div>
@@ -24,7 +24,7 @@ Enter any topic. Watch AI argue. See who wins.
 ## Live Demo
 
 🌐 **Frontend:** [two-minds-nine.vercel.app](https://two-minds-nine.vercel.app)  
-⚙️ **API:** [twominds-production.up.railway.app](https://twominds-production.up.railway.app)
+⚙️ **API:** [twominds.onrender.com](https://twominds.onrender.com)
 
 ---
 
@@ -35,8 +35,8 @@ Enter any topic. Watch AI argue. See who wins.
 - 🔄 **Stateful debate loop** — LangGraph conditional edges drive N-round debates with shared memory
 - 📊 **Live scoreboard** — Real-time score bar updates after every round
 - 🏆 **Final verdict** — Judge declares a winner with detailed reasoning
-- 🎨 **Production UI** — Dark cinematic React frontend with streaming responses
-- 📡 **Streaming API** — FastAPI Server-Sent Events stream arguments live to the frontend
+- 🎨 **Production UI** — Dark cinematic React frontend with final verdict summaries
+- 📡 **API responses** — FastAPI returns debate results in a single JSON payload
 - 💬 **Preset topics** — One-click debate starters for quick demos
 
 ---
@@ -47,7 +47,7 @@ Enter any topic. Watch AI argue. See who wins.
 User enters topic
        │
        ▼
-  FastAPI Backend  ──── Server-Sent Events ────►  React Frontend
+     FastAPI Backend  ──── JSON response ────►  React Frontend
        │
        ▼
   LangGraph State Machine
@@ -79,10 +79,10 @@ The shared `DebateState` (Pydantic model) flows through every LangGraph node —
 | **Agent Framework** | LangChain |
 | **State Schema** | Pydantic v2 |
 | **Backend API** | FastAPI + Uvicorn |
-| **Streaming** | Server-Sent Events (SSE) |
+| **API Format** | JSON response |
 | **Frontend** | React 18 + Vite |
 | **Styling** | Tailwind CSS |
-| **Backend Deploy** | Railway |
+| **Backend Deploy** | Render |
 | **Frontend Deploy** | Vercel |
 
 ---
@@ -91,7 +91,7 @@ The shared `DebateState` (Pydantic model) flows through every LangGraph node —
 
 ```
 TwoMinds/
-├── api.py                    # FastAPI backend with SSE streaming
+├── api.py                    # FastAPI backend (non-streaming JSON)
 ├── agents/
 │   ├── proponent.py          # Llama agent — argues FOR
 │   ├── opponent.py           # Llama agent — argues AGAINST
@@ -104,7 +104,7 @@ TwoMinds/
 │   └── prompts.py            # All system prompts
 ├── frontend/
 │   ├── src/
-│   │   ├── App.jsx           # Main app + SSE client
+│   │   ├── App.jsx           # Main app + JSON debate fetch
 │   │   ├── components/
 │   │   │   ├── Header.jsx
 │   │   │   ├── TopicInput.jsx
@@ -168,8 +168,8 @@ Open **http://localhost:5173** 🚀
 - **Shared state** — Pydantic `DebateState` passed through every node carrying full debate history
 - **Structured output** — Judge agent returns JSON scores, parsed and validated with fallback handling
 - **Memory** — every agent receives the full debate transcript as context before each response
-- **SSE streaming** — FastAPI streams debate events to React in real time using Server-Sent Events
-- **CORS** — configured to allow cross-origin requests between Vercel frontend and Railway backend
+- **API response model** — FastAPI returns a single debate result payload
+- **CORS** — configured to allow cross-origin requests between Vercel frontend and Render backend
 
 ---
 
