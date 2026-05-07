@@ -5,6 +5,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
+import traceback
 
 load_dotenv()
 
@@ -37,6 +38,9 @@ def root():
 @app.post("/debate")
 def debate(req: DebateRequest):
     try:
+        if not os.getenv("GROQ_API_KEY"):
+            raise HTTPException(status_code=500, detail="GROQ_API_KEY is not set")
+
         state = DebateState(topic=req.topic, total_rounds=req.rounds)
 
         for round_num in range(1, req.rounds + 1):
@@ -75,7 +79,10 @@ def debate(req: DebateRequest):
         }
 
         return {"arguments": arguments, "scores": scores, "verdict": verdict}
+    except HTTPException:
+        raise
     except Exception as exc:
+        print("Debate error:\n", traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 @app.get("/presets")

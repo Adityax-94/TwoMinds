@@ -35,7 +35,12 @@ export default function App() {
       })
 
       if (!res.ok) {
-        throw new Error(`Debate request failed (${res.status})`)
+        let message = `Debate request failed (${res.status})`
+        try {
+          const err = await res.json()
+          if (err?.detail) message = err.detail
+        } catch {}
+        throw new Error(message)
       }
 
       const data = await res.json()
@@ -53,7 +58,7 @@ export default function App() {
     } catch (e) {
       console.error(e)
       setStatus('idle')
-      setError('Failed to start debate. Please check the server and try again.')
+      setError(e?.message || 'Failed to start debate. Please check the server and try again.')
     }
   }
 
