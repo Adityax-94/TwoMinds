@@ -44,6 +44,7 @@ export default function App() {
       const reader = res.body.getReader()
       const decoder = new TextDecoder()
       let receivedVerdict = false
+      let buffer = ''
       setStatus('debating')
 
       while (true) {
@@ -55,11 +56,24 @@ export default function App() {
           }
           break
         }
-        const text = decoder.decode(value)
-        const lines = text.split('\n').filter(l => l.startsWith('data: '))
-        for (const line of lines) {
-          const raw = line.replace('data: ', '').trim()
-          if (raw === '[DONE]') { setStatus('done'); break }
+        buffer += decoder.decode(value, { stream: true })
+        const events = buffer.split('\n\n')
+        buffer = events.pop() || ''
+
+        for (const evt of events) {
+          const dataLines = evt
+            .split('\n')
+            .filter(l => l.startsWith('data: '))
+            .map(l => l.replace('data: ', ''))
+
+          if (dataLines.length === 0) continue
+          const raw = dataLines.join('\n').trim()
+
+          if (raw === '[DONE]') {
+            setStatus('done')
+            continue
+          }
+
           try {
             const data = JSON.parse(raw)
             if (data.type === 'argument') {
