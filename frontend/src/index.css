@@ -30,7 +30,12 @@ body {
   0% { transform: translateY(-100%); }
   100% { transform: translateY(100vh); }
 }
+@keyframes slideRight {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}
 
 .fade-up { animation: fadeUp 0.5s ease forwards; }
 .thinking { animation: pulse-glow 2s ease-in-out infinite; }
 .cursor { animation: blink 1s step-end infinite; display: inline-block; width: 2px; height: 1em; background: currentColor; margin-left: 2px; vertical-align: text-bottom; }
+.slide-right { animation: slideRight 1.5s ease-in-out infinite; }

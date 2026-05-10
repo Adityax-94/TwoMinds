@@ -1,8 +1,73 @@
+import { useState, useEffect } from 'react'
 import ArgumentBubble from './ArgumentBubble'
 import ScoreBar from './ScoreBar'
 
+function DebateLoading() {
+  const [step, setStep] = useState(0)
+  const steps = [
+    "INITIALIZING_ARENA...",
+    "ALLOCATING_NEURAL_WEIGHTS // PRO",
+    "ALLOCATING_NEURAL_WEIGHTS // CON",
+    "ESTABLISHING_CONTEXT_VECTORS...",
+    "SYNCING_MODELS...",
+    "GENERATING_ARGUMENTS..."
+  ]
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setStep(s => (s < steps.length - 1 ? s + 1 : s))
+    }, 1200)
+    return () => clearInterval(timer)
+  }, [])
+
+  return (
+    <div className="flex flex-col items-center justify-center py-16 fade-up w-full">
+      <div className="relative w-48 h-32 mb-12 flex items-center justify-center">
+        {/* Nodes */}
+        <div className="absolute left-0 w-16 h-16 rounded-full bg-blue-500/5 border border-blue-500/20 shadow-[0_0_30px_rgba(59,130,246,0.1)] flex items-center justify-center z-10">
+          <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
+        </div>
+        <div className="absolute right-0 w-16 h-16 rounded-full bg-red-500/5 border border-red-500/20 shadow-[0_0_30px_rgba(239,68,68,0.1)] flex items-center justify-center z-10" style={{ animationDelay: '0.5s' }}>
+          <div className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />
+        </div>
+        
+        {/* Connecting Data Stream */}
+        <div className="absolute w-24 h-px bg-white/10 z-0">
+          <div className="w-10 h-full bg-gradient-to-r from-transparent via-white/80 to-transparent slide-right" />
+        </div>
+        
+        {/* Rings */}
+        <div className="absolute left-[-8px] w-20 h-20 rounded-full border border-white/5 border-t-blue-500/30 border-b-blue-500/30 animate-[spin_4s_linear_infinite]" />
+        <div className="absolute right-[-8px] w-20 h-20 rounded-full border border-white/5 border-t-red-500/30 border-b-red-500/30 animate-[spin_4s_linear_infinite_reverse]" />
+      </div>
+      
+      {/* Terminal text */}
+      <div className="font-mono text-sm flex flex-col items-start w-full max-w-[340px] bg-black/40 border border-white/5 p-5 rounded-lg backdrop-blur-sm">
+        {steps.map((text, i) => (
+          <div 
+            key={i} 
+            className={`flex items-center transition-all duration-300 h-6 overflow-hidden
+              ${i === step ? 'text-white' : i < step ? 'text-white/30' : 'opacity-0 h-0 hidden'}`}
+          >
+            <span className={`mr-3 text-xs ${i === step ? 'text-amber-500' : 'text-green-500/60'}`}>
+              {i < step ? '[OK]' : '[..]'}
+            </span>
+            <span className="tracking-wider text-xs">{text}</span>
+            {i === step && <span className="cursor ml-1" />}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function DebateArena({ arguments_, scores, status, topic }) {
   const isLive = status === 'debating'
+  const isLoading = status === 'loading' && arguments_.length === 0
+
+  if (isLoading) {
+    return <DebateLoading />
+  }
 
   // Group by round
   const rounds = {}
